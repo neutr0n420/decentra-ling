@@ -5,6 +5,9 @@ import fs from 'fs';
 import { join } from "path";
 import { openAI } from "@/utils/openai"
 import { translation } from "@/utils/translation";
+import { ConvertToSpeech } from "@/utils/ConvertToSpeech";
+import { UniqueFileName } from "@/utils/uniqueFileName";
+import { translatedScriptInterface } from "@/types/interface";
 
 
 export async function POST(req: NextRequest) {
@@ -28,10 +31,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Create unique filename
-        const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
-        const filename = `video-${uniqueSuffix}${getFileExtension(video.name)}`;
-
+        const filename = UniqueFileName(video);
         // Create uploads directory if it doesn't exist
         const uploadDir = join(process.cwd(), "public", "uploads");
 
@@ -56,6 +56,9 @@ export async function POST(req: NextRequest) {
                     model: 'whisper-1'
                 });
                 const translatedTranscript = await translation(transcription.text, language);
+
+                await ConvertToSpeech(translatedTranscript as translatedScriptInterface);
+
                 return NextResponse.json({
                     message: "Transcription generated sucessfully",
                     fileName: filename,
@@ -99,11 +102,7 @@ export async function POST(req: NextRequest) {
     }
 }
 
-// Helper function to get file extension
-function getFileExtension(filename: string): string {
-    const ext = filename.split('.').pop();
-    return ext ? `.${ext}` : '';
-}
+
 
 // Configure segment config for larger files
 export const config = {

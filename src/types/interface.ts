@@ -6,3 +6,6 @@ export interface UploadResponse {
     transcription: string,
     sucess: boolean
 }
+export interface translatedScriptInterface {
+    content: string
+}
