@@ -4,12 +4,14 @@ import { writeFile } from "fs/promises";
 import fs from 'fs';
 import { join } from "path";
 import { openAI } from "@/utils/openai"
+import { translation } from "@/utils/translation";
 
 
 export async function POST(req: NextRequest) {
     try {
         const formData = await req.formData();
         const video = formData.get("video") as File | null;
+        const language = formData.get("translation-language") as string;
 
         if (!video) {
             return NextResponse.json(
@@ -48,37 +50,32 @@ export async function POST(req: NextRequest) {
             console.log("File path", filePath)
             try {
                 const readStream = fs.createReadStream(filePath)
-                console.log(readStream)
+                // console.log(readStream)
                 const transcription = await openAI.audio.translations.create({
                     file: readStream,
                     model: 'whisper-1'
                 });
-                console.log(transcription.text);
+                const translatedTranscript = await translation(transcription.text, language);
                 return NextResponse.json({
                     message: "Transcription generated sucessfully",
                     fileName: filename,
                     fileUrl: fileUrl,
                     flePath: filePath,
                     transcription: transcription.text,
+                    translationLanguage: language,
+                    translatedTranscript: translatedTranscript,
                     sucess: true,
                 }, { status: 200 })
             } catch (error: unknown) {
-                return NextResponse.json(
-                    {
-                        message: `${error}`
-                    },
-                    {
-                        status: 500
-                    }
+                return NextResponse.json({
+                    message: `${error}`
+                }, {
+                    status: 500
+                }
                 )
             }
 
-            // return NextResponse.json({
-            //     message: "Video uploaded successfully",
-            //     url: fileUrl,
-            //     filename: filename,
-            //     success: true
-            // }, { status: 200 });
+
 
         } catch (error) {
             console.error("Error saving file:", error);
