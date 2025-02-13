@@ -1,15 +1,27 @@
+'use client';
 import Link from "next/link"
 import { Globe, Copyright, DollarSign } from "lucide-react"
 import InteractiveDemo from "@/components/InteractiveDemo";
 import ConnectButton from "@/components/ConnectButton";
+import { useEffect } from "react";
+import { useAppKitAccount } from "@reown/appkit/react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const { status, isConnected } = useAppKitAccount();
+  const router = useRouter();
+  useEffect(() => {
+    if (isConnected) {
+      router.push('/dashboard')
+    }
+  }, [isConnected, status])
   return (
     <div className="flex flex-col justify-around">
       <header className="bg-gray-900 text-white py-4 px-8">
         <div className="  px-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold">Decentra-Ling</h1>
           <nav className=" flex justify-around">
+
             <ul className="flex items-center space-x-8">
               <li>
                 <Link href="#how-it-works" className="hover:text-blue-400">

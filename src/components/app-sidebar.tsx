@@ -1,4 +1,4 @@
-import { Calendar, Home, Inbox, Search, Settings } from "lucide-react"
+import { Calendar, FileText, Languages, Search, Settings } from "lucide-react"
 
 import {
     Sidebar,
@@ -16,12 +16,12 @@ const items = [
     {
         title: "Translate PDF",
         url: "/dashboard/translate-pdf",
-        icon: Home,
+        icon: FileText,
     },
     {
         title: "Translate Video",
         url: "/dashboard/translate-video",
-        icon: Inbox,
+        icon: Languages,
     },
     {
         title: "Register Content",

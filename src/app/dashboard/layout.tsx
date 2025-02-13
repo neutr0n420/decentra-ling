@@ -6,7 +6,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     return (
         <SidebarProvider>
             <AppSidebar />
-            <main>
+            <main className="w-screen">
                 <SidebarTrigger />
                 {children}
             </main>

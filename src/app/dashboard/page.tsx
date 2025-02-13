@@ -1,5 +1,5 @@
 export default function Dashboard() {
     return (
-        <div>This is dashboard</div>
+        <div className="bg-gray-200 w-full text-center">This is dashboard</div>
     )
 }
