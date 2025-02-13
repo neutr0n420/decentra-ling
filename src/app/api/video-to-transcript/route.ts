@@ -1,6 +1,7 @@
 // app/api/upload-video/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { writeFile } from "fs/promises";
+import path from "path";
 import fs from 'fs';
 import { join } from "path";
 import { openAI } from "@/utils/openai"
@@ -8,6 +9,7 @@ import { translation } from "@/utils/translation";
 import { ConvertToSpeech } from "@/utils/ConvertToSpeech";
 import { UniqueFileName } from "@/utils/uniqueFileName";
 import { translatedScriptInterface } from "@/types/interface";
+import { mergeAudioVideo } from "@/utils/ReplaceVideoAudioFunction";
 
 
 export async function POST(req: NextRequest) {
@@ -56,9 +58,14 @@ export async function POST(req: NextRequest) {
                     model: 'whisper-1'
                 });
                 const translatedTranscript = await translation(transcription.text, language);
+                const dubbedAudioSpeechPath = await ConvertToSpeech(translatedTranscript as translatedScriptInterface);
 
-                await ConvertToSpeech(translatedTranscript as translatedScriptInterface);
+                const outFolderDir = path.join(process.cwd(), 'public', 'uploads', 'output');
 
+                const finalVideoPath = await mergeAudioVideo({ videoPath: filePath, audioPath: dubbedAudioSpeechPath, outputDir: outFolderDir });
+
+                const finalVideoUrl = `/output/${path.basename(finalVideoPath)}`;
+                console.log("This is the final video url", finalVideoUrl);
                 return NextResponse.json({
                     message: "Transcription generated sucessfully",
                     fileName: filename,
@@ -67,6 +74,7 @@ export async function POST(req: NextRequest) {
                     transcription: transcription.text,
                     translationLanguage: language,
                     translatedTranscript: translatedTranscript,
+                    dubbedAudioSpeechPath: dubbedAudioSpeechPath,
                     sucess: true,
                 }, { status: 200 })
             } catch (error: unknown) {
