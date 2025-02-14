@@ -1,8 +1,9 @@
-import { Clapperboard, Film, House, Languages } from "lucide-react"
+import { Clapperboard, DollarSign, Film, House, Languages } from "lucide-react"
 
 import {
     Sidebar,
     SidebarContent,
+    SidebarFooter,
     SidebarGroup,
     SidebarGroupContent,
     SidebarGroupLabel,
@@ -33,6 +34,11 @@ const items = [
         url: "/dashboard/view-rented-video",
         icon: Film,
     },
+    {
+        title: "Your Earning",
+        url: "/dashboard/settings",
+        icon: DollarSign,
+    },
 
 ]
 
@@ -57,6 +63,35 @@ export function AppSidebar() {
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
+                <SidebarFooter>
+                    <SidebarMenu>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton>
+                                Username
+                                {/* <ChevronUp className="ml-auto" /> */}
+                            </SidebarMenuButton>
+                            {/* <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                    side="top"
+                                    className="w-[--radix-popper-anchor-width]"
+                                >
+                                    <DropdownMenuItem>
+                                        <span>Account</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem>
+                                        <span>Billing</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem>
+                                        <span>Sign out</span>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu> */}
+                        </SidebarMenuItem>
+                    </SidebarMenu>
+                </SidebarFooter>
             </SidebarContent>
         </Sidebar>
     )

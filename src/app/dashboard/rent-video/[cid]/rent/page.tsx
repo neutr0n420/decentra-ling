@@ -73,7 +73,7 @@ export default function Rent({ params }: { params: Promise<{ cid: string }> }) {
             setIsRenting(true);
             const cid = (await params).cid;
             const durationInDays = parseInt(duration);
-
+            //[TODO: This payable functions is not working properly after integration come back and have a look once]
             await RentVideo({ cid, duration: durationInDays });
             setIsModalOpen(false);
             fetchData();
