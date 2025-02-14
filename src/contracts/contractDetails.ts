@@ -1,4 +1,4 @@
-export const CONTRACT_ADDRESS = "0x3b301AAE8f21Bcb33D3F2A635862Cd44509B504D";
+export const CONTRACT_ADDRESS = "0x69bE5A6669582181857eB5030814F5e653EB5D06";
 export const CONTRACT_ABI = [
     {
         "anonymous": false,
@@ -194,6 +194,19 @@ export const CONTRACT_ABI = [
     },
     {
         "inputs": [],
+        "name": "getAvailableVideos",
+        "outputs": [
+            {
+                "internalType": "string[]",
+                "name": "",
+                "type": "string[]"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
         "name": "getEarnings",
         "outputs": [
             {
@@ -243,7 +256,7 @@ export const CONTRACT_ABI = [
                         "type": "bool"
                     }
                 ],
-                "internalType": "struct VideoRental.Rental",
+                "internalType": "struct DecentraLing.Rental",
                 "name": "",
                 "type": "tuple"
             }
@@ -289,7 +302,7 @@ export const CONTRACT_ABI = [
                         "type": "uint256"
                     }
                 ],
-                "internalType": "struct VideoRental.Video",
+                "internalType": "struct DecentraLing.Video",
                 "name": "",
                 "type": "tuple"
             }
@@ -375,4 +388,4 @@ export const CONTRACT_ABI = [
         "stateMutability": "view",
         "type": "function"
     }
-]
+] 

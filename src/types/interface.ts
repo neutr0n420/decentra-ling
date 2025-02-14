@@ -36,3 +36,16 @@ export interface ReturnAPIData {
     },
     updatedAt: string
 }
+
+export interface MakeAvailableForRentContractParams {
+    cid: string,
+    rentPrice: number,
+    royaltyFeesPercentage: number
+}
+export interface RentVideoContractFunctionParams {
+    cid: string,
+    duration: number
+}
+export interface CidType {
+    cid: string
+}

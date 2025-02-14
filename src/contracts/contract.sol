@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-contract VideoRental {
+contract DecentraLing {
     struct Video {
         string cid;
         address owner;
@@ -22,6 +22,10 @@ contract VideoRental {
     mapping(string => Video) public videos;
     mapping(string => Rental) public rentals;
     mapping(address => uint256) public earnings;
+
+    // Array to track available video CIDs
+    string[] private availableCids;
+    mapping(string => uint256) private cidToIndex;
 
     // Events
     event VideoAvailable(
@@ -61,6 +65,10 @@ contract VideoRental {
             royaltyPercentage: royaltyPercentage
         });
 
+        // Add to available CIDs list
+        availableCids.push(cid);
+        cidToIndex[cid] = availableCids.length - 1;
+
         emit VideoAvailable(cid, rentPrice, royaltyPercentage);
     }
 
@@ -77,6 +85,10 @@ contract VideoRental {
         );
         require(duration > 0, "Duration must be greater than 0");
         require(!rentals[cid].isActive, "Video is currently rented");
+
+        // Remove from available CIDs list
+        _removeFromAvailable(cid);
+        video.isAvailable = false;
 
         // Create new rental
         rentals[cid] = Rental({
@@ -118,6 +130,10 @@ contract VideoRental {
         rental.isActive = false;
         videos[cid].isAvailable = true;
 
+        // Add back to available CIDs list
+        availableCids.push(cid);
+        cidToIndex[cid] = availableCids.length - 1;
+
         emit RentalEnded(cid, rental.renter);
     }
 
@@ -131,6 +147,28 @@ contract VideoRental {
         require(success, "Transfer failed");
 
         emit EarningsWithdrawn(msg.sender, amount);
+    }
+
+    // 6. Get all available videos
+    function getAvailableVideos() external view returns (string[] memory) {
+        return availableCids;
+    }
+
+    // Internal function to remove a CID from the available list
+    function _removeFromAvailable(string memory cid) internal {
+        uint256 index = cidToIndex[cid];
+        uint256 lastIndex = availableCids.length - 1;
+
+        // If the CID to remove is not the last one, swap it with the last element
+        if (index != lastIndex) {
+            string memory lastCid = availableCids[lastIndex];
+            availableCids[index] = lastCid;
+            cidToIndex[lastCid] = index;
+        }
+
+        // Remove the last element
+        availableCids.pop();
+        delete cidToIndex[cid];
     }
 
     // View functions

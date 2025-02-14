@@ -1,4 +1,4 @@
-import { Calendar, FileText, Languages, Search, Settings } from "lucide-react"
+import { Clapperboard, Film, House, Languages } from "lucide-react"
 
 import {
     Sidebar,
@@ -14,9 +14,9 @@ import {
 // Menu items.
 const items = [
     {
-        title: "Translate PDF",
-        url: "/dashboard/translate-pdf",
-        icon: FileText,
+        title: "Home",
+        url: "/dashboard/",
+        icon: House,
     },
     {
         title: "Translate Video",
@@ -24,20 +24,16 @@ const items = [
         icon: Languages,
     },
     {
-        title: "Register Content",
-        url: "/dashboard/register-content",
-        icon: Calendar,
+        title: "Rent Content",
+        url: "/dashboard/rent-video",
+        icon: Clapperboard,
     },
     {
-        title: "Register Translation",
-        url: "/dashboard/register-translation",
-        icon: Search,
+        title: "View Rented Video",
+        url: "/dashboard/view-rented-video",
+        icon: Film,
     },
-    {
-        title: "Settings",
-        url: "#",
-        icon: Settings,
-    },
+
 ]
 
 export function AppSidebar() {
