@@ -1,190 +1,150 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
-
-contract DecentraLing is ERC721, ReentrancyGuard, Ownable {
-    using Counters for Counters.Counter;
-    Counters.Counter private _tokenIds;
-
+contract VideoRental {
     struct Video {
-        string originalVideoHash; // IPFS hash of original video
-        string translatedVideoHash; // IPFS hash of translated video
-        address owner; // Owner of the video
-        uint256 rentalPrice; // Price per day in wei
-        uint256 royaltyPercentage; // Royalty percentage (e.g., 500 = 5%)
-        bool isAvailableForRent; // Whether the video is available for rent
-        string[] languages; // Available translation languages
+        string cid;
+        address owner;
+        uint256 rentPrice;
+        bool isAvailable;
+        uint256 royaltyPercentage; // in basis points (1% = 100)
     }
 
     struct Rental {
         address renter;
         uint256 startTime;
-        uint256 endTime;
-        bool active;
+        uint256 duration;
+        uint256 rentPrice;
+        bool isActive;
     }
 
-    // Mapping from token ID to Video struct
-    mapping(uint256 => Video) public videos;
-
-    // Mapping from token ID to rental information
-    mapping(uint256 => Rental) public rentals;
-
-    // Mapping to track earnings for each video owner
+    // Mappings
+    mapping(string => Video) public videos;
+    mapping(string => Rental) public rentals;
     mapping(address => uint256) public earnings;
 
     // Events
-    event VideoUploaded(
-        uint256 indexed tokenId,
-        address owner,
-        string originalHash
+    event VideoAvailable(
+        string cid,
+        uint256 rentPrice,
+        uint256 royaltyPercentage
     );
-    event VideoTranslated(
-        uint256 indexed tokenId,
-        string language,
-        string translatedHash
-    );
-    event VideoRented(
-        uint256 indexed tokenId,
-        address renter,
-        uint256 startTime,
-        uint256 endTime
-    );
-    event RentalEnded(uint256 indexed tokenId, address renter);
-    event RoyaltyPaid(
-        uint256 indexed tokenId,
-        address owner,
-        address renter,
-        uint256 amount
-    );
+    event VideoRented(string cid, address renter, uint256 duration);
+    event RentalEnded(string cid, address renter);
+    event EarningsWithdrawn(address owner, uint256 amount);
 
-    constructor(
-        address initialOwner
-    ) ERC721("Translated Video NFT", "TVNFT") Ownable(initialOwner) {}
+    // Modifiers
+    modifier onlyVideoOwner(string memory cid) {
+        require(videos[cid].owner == msg.sender, "Not the video owner");
+        _;
+    }
 
-    function uploadVideo(
-        string memory _originalVideoHash,
-        uint256 _rentalPrice,
-        uint256 _royaltyPercentage
-    ) external returns (uint256) {
-        require(
-            _royaltyPercentage <= 10000,
-            "Royalty percentage must be <= 100%"
-        );
+    modifier videoExists(string memory cid) {
+        require(videos[cid].owner != address(0), "Video does not exist");
+        _;
+    }
 
-        _tokenIds.increment();
-        uint256 newTokenId = _tokenIds.current();
+    // 1. Make video available for renting
+    function makeAvailableForRent(
+        string memory cid,
+        uint256 rentPrice,
+        uint256 royaltyPercentage
+    ) external {
+        require(rentPrice > 0, "Rent price must be greater than 0");
+        require(royaltyPercentage <= 5000, "Royalty cannot exceed 50%"); // Max 50%
 
-        videos[newTokenId] = Video({
-            originalVideoHash: _originalVideoHash,
-            translatedVideoHash: "",
+        videos[cid] = Video({
+            cid: cid,
             owner: msg.sender,
-            rentalPrice: _rentalPrice,
-            royaltyPercentage: _royaltyPercentage,
-            isAvailableForRent: false,
-            languages: new string[](0)
+            rentPrice: rentPrice,
+            isAvailable: true,
+            royaltyPercentage: royaltyPercentage
         });
 
-        _safeMint(msg.sender, newTokenId);
-
-        emit VideoUploaded(newTokenId, msg.sender, _originalVideoHash);
-
-        return newTokenId;
+        emit VideoAvailable(cid, rentPrice, royaltyPercentage);
     }
 
-    function addTranslation(
-        uint256 _tokenId,
-        string memory _translatedVideoHash,
-        string memory _language
-    ) external {
-        require(
-            ownerOf(_tokenId) == msg.sender,
-            "Only owner can add translation"
-        );
-
-        Video storage video = videos[_tokenId];
-        video.translatedVideoHash = _translatedVideoHash;
-        video.languages.push(_language);
-
-        emit VideoTranslated(_tokenId, _language, _translatedVideoHash);
-    }
-
-    function setRentalAvailability(
-        uint256 _tokenId,
-        bool _isAvailable
-    ) external {
-        require(
-            ownerOf(_tokenId) == msg.sender,
-            "Only owner can set rental availability"
-        );
-        videos[_tokenId].isAvailableForRent = _isAvailable;
-    }
-
+    // 2. Rent a video
     function rentVideo(
-        uint256 _tokenId,
-        uint256 _durationInDays
-    ) external payable nonReentrant {
-        Video storage video = videos[_tokenId];
-        require(video.isAvailableForRent, "Video not available for rent");
-        require(!rentals[_tokenId].active, "Video already rented");
+        string memory cid,
+        uint256 duration
+    ) external payable videoExists(cid) {
+        Video storage video = videos[cid];
+        require(video.isAvailable, "Video is not available for rent");
+        require(
+            msg.value >= video.rentPrice * duration,
+            "Insufficient payment"
+        );
+        require(duration > 0, "Duration must be greater than 0");
+        require(!rentals[cid].isActive, "Video is currently rented");
 
-        uint256 totalCost = video.rentalPrice * _durationInDays;
-        require(msg.value >= totalCost, "Insufficient payment");
-
-        // Calculate royalty
-        uint256 royaltyAmount = (totalCost * video.royaltyPercentage) / 10000;
-        earnings[video.owner] += royaltyAmount;
-
-        // Create rental
-        rentals[_tokenId] = Rental({
+        // Create new rental
+        rentals[cid] = Rental({
             renter: msg.sender,
             startTime: block.timestamp,
-            endTime: block.timestamp + (_durationInDays * 1 days),
-            active: true
+            duration: duration,
+            rentPrice: video.rentPrice * duration,
+            isActive: true
         });
 
-        emit VideoRented(
-            _tokenId,
-            msg.sender,
-            block.timestamp,
-            rentals[_tokenId].endTime
+        // Calculate and distribute earnings
+        uint256 royalty = calculateRoyalty(cid, msg.value);
+        earnings[video.owner] += royalty;
+
+        emit VideoRented(cid, msg.sender, duration);
+    }
+
+    // 3. Calculate royalties
+    function calculateRoyalty(
+        string memory cid,
+        uint256 amount
+    ) public view videoExists(cid) returns (uint256) {
+        Video storage video = videos[cid];
+        return (amount * video.royaltyPercentage) / 10000;
+    }
+
+    // 4. End rental
+    function endRental(string memory cid) external videoExists(cid) {
+        Rental storage rental = rentals[cid];
+        require(rental.isActive, "No active rental");
+        require(
+            msg.sender == rental.renter ||
+                msg.sender == videos[cid].owner ||
+                block.timestamp >=
+                rental.startTime + (rental.duration * 1 days),
+            "Not authorized or rental period not ended"
         );
-        emit RoyaltyPaid(_tokenId, video.owner, msg.sender, royaltyAmount);
+
+        rental.isActive = false;
+        videos[cid].isAvailable = true;
+
+        emit RentalEnded(cid, rental.renter);
     }
 
-    function endRental(uint256 _tokenId) external {
-        Rental storage rental = rentals[_tokenId];
-        require(rental.active, "No active rental");
-        require(block.timestamp >= rental.endTime, "Rental period not over");
-
-        rental.active = false;
-        emit RentalEnded(_tokenId, rental.renter);
-    }
-
-    function withdrawEarnings() external nonReentrant {
+    // 5. Withdraw earnings
+    function withdrawEarnings() external {
         uint256 amount = earnings[msg.sender];
         require(amount > 0, "No earnings to withdraw");
 
         earnings[msg.sender] = 0;
-        (bool success, ) = msg.sender.call{value: amount}("");
+        (bool success, ) = payable(msg.sender).call{value: amount}("");
         require(success, "Transfer failed");
+
+        emit EarningsWithdrawn(msg.sender, amount);
     }
 
     // View functions
-    function getVideo(uint256 _tokenId) external view returns (Video memory) {
-        return videos[_tokenId];
+    function getVideo(string memory cid) external view returns (Video memory) {
+        return videos[cid];
     }
 
-    function getRental(uint256 _tokenId) external view returns (Rental memory) {
-        return rentals[_tokenId];
+    function getRental(
+        string memory cid
+    ) external view returns (Rental memory) {
+        return rentals[cid];
     }
 
-    function getAvailableLanguages(
-        uint256 _tokenId
-    ) external view returns (string[] memory) {
-        return videos[_tokenId].languages;
+    function getEarnings() external view returns (uint256) {
+        return earnings[msg.sender];
     }
 }
