@@ -4,11 +4,15 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import axios from 'axios';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DubbedApiResponse } from "@/types/interface";
+import { useRouter } from "next/navigation";
 
 const Index = () => {
+    const router = useRouter();
     const [uploading, setUploading] = useState(false);
     const [selectedLang, setSelectedLang] = useState("");
     const [videoFile, setVideoFile] = useState<File | null>(null);
+
 
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
 
@@ -26,32 +30,77 @@ const Index = () => {
         }
     };
 
+
+    async function uploadToPinata(filePath: string) {
+        try {
+            // Fetch the video file from our API endpoint
+            const response = await fetch('/api/read-video', {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    getFilePath: filePath
+                })
+            });
+            if (!response.ok) {
+                throw new Error('Failed to fetch video file');
+            }
+
+            // Get the video data as blob
+            const videoBlob = await response.blob();
+
+            // Create FormData and append the file
+            const formData = new FormData();
+            formData.append('fileBuffer', videoBlob);
+            formData.append('fileName', 'dubbed-video.mp4');
+
+            // Send to backend for Pinata upload
+            const pinataResponse = await fetch('/api/files', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!pinataResponse.ok) {
+                const error = await pinataResponse.json();
+                throw new Error(error.details || 'Upload failed');
+            }
+
+            const result = await pinataResponse.json();
+            console.log('Upload successful:', result);
+            return result.url;
+
+        } catch (error) {
+            console.error('Upload failed:', error);
+            throw error;
+        }
+    }
+
+
+
     const handleUpload = async () => {
-        console.log('hehe 1')
-        console.log(videoFile)
+        setUploading(true);
         const formData = new FormData();
         formData.append('video', videoFile as File);
         formData.append('translation-language', selectedLang);
-        const response = await axios.post('/api/video-to-transcript', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-            // Add timeout and size limits if needed
-            maxContentLength: Infinity,
-            maxBodyLength: Infinity
-        })
-        console.log(response.data);
-        // const res = await axios.get('/api/health-check')
         if (!videoFile) {
-            console.log('hehe')
             window.alert("No video Selected")
             return;
         }
+        const response = await axios.post<DubbedApiResponse>('/api/video-to-transcript', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
 
-        setUploading(true);
-        console.log('Uploading video')
+        })
+        console.log(response.data);
+        const outputPath = response.data.DubbedVideoUrl;
+        console.log('Original video URL:', outputPath);
 
-        // TODO: Implement Supabase upload after connection
+        const ipfsUrl = await uploadToPinata(outputPath)
+        console.log("This is ipfsUrl", ipfsUrl)
+        router.push(ipfsUrl);
+
         setUploading(false);
     };
     const handleValueChange = (value: string) => {

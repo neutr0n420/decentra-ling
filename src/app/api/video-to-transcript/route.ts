@@ -49,10 +49,8 @@ export async function POST(req: NextRequest) {
             // Generate public URL
             const fileUrl = `/uploads/${filename}`;
 
-            console.log("File path", filePath)
             try {
                 const readStream = fs.createReadStream(filePath)
-                // console.log(readStream)
                 const transcription = await openAI.audio.translations.create({
                     file: readStream,
                     model: 'whisper-1'
@@ -65,7 +63,6 @@ export async function POST(req: NextRequest) {
                 const finalVideoPath = await mergeAudioVideo({ videoPath: filePath, audioPath: dubbedAudioSpeechPath, outputDir: outFolderDir });
 
                 const finalVideoUrl = `/output/${path.basename(finalVideoPath)}`;
-                console.log("This is the final video url", finalVideoUrl);
                 return NextResponse.json({
                     message: "Transcription generated sucessfully",
                     fileName: filename,
@@ -75,6 +72,7 @@ export async function POST(req: NextRequest) {
                     translationLanguage: language,
                     translatedTranscript: translatedTranscript,
                     dubbedAudioSpeechPath: dubbedAudioSpeechPath,
+                    DubbedVideoUrl: finalVideoUrl,
                     sucess: true,
                 }, { status: 200 })
             } catch (error: unknown) {
