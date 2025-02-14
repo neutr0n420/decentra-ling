@@ -27,3 +27,12 @@ export interface DubbedApiResponse {
 export interface Props {
     value: string
 }
+export interface ReturnAPIData {
+    message: string,
+    success: boolean,
+    data: {
+        address: string,
+        cids: string[],
+    },
+    updatedAt: string
+}
