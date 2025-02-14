@@ -5,14 +5,17 @@ import { Button } from "@/components/ui/button";
 import axios from 'axios';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DubbedApiResponse } from "@/types/interface";
+import { useAppKitAccount } from "@reown/appkit/react";
 import { useRouter } from "next/navigation";
 
 const Index = () => {
     const router = useRouter();
+
+    const { address } = useAppKitAccount();
     const [uploading, setUploading] = useState(false);
     const [selectedLang, setSelectedLang] = useState("");
     const [videoFile, setVideoFile] = useState<File | null>(null);
-
+    console.log(address)
 
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
 
@@ -68,7 +71,7 @@ const Index = () => {
 
             const result = await pinataResponse.json();
             console.log('Upload successful:', result);
-            return result.url;
+            return result;
 
         } catch (error) {
             console.error('Upload failed:', error);
@@ -98,8 +101,17 @@ const Index = () => {
         console.log('Original video URL:', outputPath);
 
         const ipfsUrl = await uploadToPinata(outputPath)
-        console.log("This is ipfsUrl", ipfsUrl)
-        router.push(ipfsUrl);
+        console.log(address)
+        // const ipfsUrl = await uploadToPinata('/output/video-1739523603326-161217907.mp4')
+        // console.log("This is ipfsUrl", ipfsUrl)
+
+        const pushToDB = axios.post('/api/store-ipfs-cid', {
+            walletAddress: address,
+            CID: ipfsUrl.ipfsHash
+        })
+        console.log(pushToDB)
+        router.push(ipfsUrl.url);
+
 
         setUploading(false);
     };

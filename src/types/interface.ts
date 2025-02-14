@@ -24,3 +24,6 @@ export interface DubbedApiResponse {
     DubbedVideoUrl: string,
     success: boolean;
 }
+export interface Props {
+    value: string
+}
