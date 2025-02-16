@@ -2,7 +2,8 @@
 
 DecentraLing is an innovative AI-powered video dubbing platform that enables content creators to transform their videos into multiple languages while preserving their original voice characteristics and emotional nuances. Built on SEI Devnet with decentralized storage, it makes content truly borderless.
 
-![DecentraLing Logo](assets/logo.svg)
+![Screenshot 2025-02-15 at 6 50 19 AM](https://github.com/user-attachments/assets/28415792-7935-4ea0-bb43-59b8a2cf8e35)
+
 
 ## 🌟 Features
 
